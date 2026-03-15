@@ -1,10 +1,10 @@
-----
+---
 import Header from '../components/Header.astro';
 import '../styles/global.css';
 
 const { title, description, pubDate } = Astro.props;
 
-function formatDate(date) {
+function formatDate(date: Date) {
   return new Date(date).toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'long',
@@ -12,22 +12,14 @@ function formatDate(date) {
   });
 }
 ---
-```
-
-Save, then in terminal run:
-```
-git add .
-git commit -m "fix layout props"
-git push
----
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{frontmatter.title} — harshtakes.lol</title>
-  <meta name="description" content={frontmatter.description} />
+  <title>{title} — harshtakes.lol</title>
+  <meta name="description" content={description} />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <script is:inline>
     const m = localStorage.getItem('theme-mode') || 'system';
@@ -39,26 +31,19 @@ git push
 <body>
   <Header />
   <main class="wrapper">
-
     <a href="/" class="back-link">← back</a>
-
     <div class="post-header">
       <div class="post-meta">
-        <span>{formatDate(frontmatter.pubDate)}</span>
+        <span>{formatDate(pubDate)}</span>
         <span>by Harsh Mudgal</span>
       </div>
-      <h1 class="post-page-title">{frontmatter.title}</h1>
-      {frontmatter.description && (
-        <p class="post-description">{frontmatter.description}</p>
-      )}
+      <h1 class="post-page-title">{title}</h1>
+      {description && <p class="post-description">{description}</p>}
     </div>
-
     <article class="prose">
       <slot />
     </article>
-
   </main>
-
   <footer class="site-footer">
     <span class="footer-text">© {new Date().getFullYear()} Harshvardhan Mudgal</span>
     <span class="footer-text">harshtakes.lol</span>
