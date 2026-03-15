@@ -1,7 +1,5 @@
 ---
 import { getCollection } from 'astro:content';
-import Header from '../components/Header.astro';
-import '../styles/global.css';
 
 const posts = (await getCollection('blog'))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
@@ -23,35 +21,411 @@ function formatDate(date) {
   <title>harshtakes.lol — Harsh Mudgal</title>
   <meta name="description" content="Tech, law, AI and everything in between. By Harshvardhan Mudgal." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <script is:inline>
-    const m = localStorage.getItem('theme-mode') || 'system';
-    if (m === 'dark' || (m === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.setAttribute('data-theme', 'dark');
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #050508;
+      --bg2: #0a0a12;
+      --purple: #9b59ff;
+      --cyan: #00f5ff;
+      --purple-dim: rgba(155, 89, 255, 0.15);
+      --cyan-dim: rgba(0, 245, 255, 0.1);
+      --purple-border: rgba(155, 89, 255, 0.3);
+      --cyan-border: rgba(0, 245, 255, 0.25);
+      --text: #e8e6f0;
+      --text-2: #8b87a0;
+      --mono: 'Share Tech Mono', monospace;
+      --sans: 'Outfit', sans-serif;
     }
-  </script>
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-weight: 300;
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Neural Canvas ── */
+    #neural-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      opacity: 0.55;
+    }
+
+    /* ── Scanline overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.08) 2px,
+        rgba(0, 0, 0, 0.08) 4px
+      );
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* ── Grid overlay ── */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-image:
+        linear-gradient(rgba(155, 89, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(155, 89, 255, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* ── Layout ── */
+    .page {
+      position: relative;
+      z-index: 2;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 1.5rem 6rem;
+    }
+
+    /* ── Header ── */
+    .site-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2rem 0 1.5rem;
+      border-bottom: 1px solid rgba(155, 89, 255, 0.2);
+      margin-bottom: 0;
+    }
+
+    .logo {
+      font-family: var(--mono);
+      font-size: 1rem;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: 0.02em;
+    }
+
+    .logo .accent { color: var(--cyan); }
+    .logo .dot { color: var(--purple); }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 1.8rem;
+    }
+
+    .nav a {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-2);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .nav a:hover { color: var(--cyan); }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 8px var(--cyan), 0 0 16px rgba(0,245,255,0.4);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.85); }
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 5rem 0 4rem;
+      position: relative;
+    }
+
+    .hero-label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .hero-label::before {
+      content: '';
+      display: inline-block;
+      width: 24px;
+      height: 1px;
+      background: var(--cyan);
+      box-shadow: 0 0 8px var(--cyan);
+    }
+
+    .hero h1 {
+      font-family: var(--sans);
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      font-weight: 600;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 .line1 { color: var(--text); }
+    .hero h1 .line2 {
+      background: linear-gradient(90deg, var(--purple), var(--cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-bio {
+      font-size: 1rem;
+      color: var(--text-2);
+      max-width: 500px;
+      line-height: 1.75;
+      margin-bottom: 2rem;
+    }
+
+    .hero-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .tag {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      padding: 0.3em 0.8em;
+      border-radius: 2px;
+      border: 1px solid var(--purple-border);
+      color: var(--purple);
+      background: var(--purple-dim);
+      text-transform: uppercase;
+    }
+
+    .tag.cyan {
+      border-color: var(--cyan-border);
+      color: var(--cyan);
+      background: var(--cyan-dim);
+    }
+
+    /* ── Section header ── */
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding-top: 1rem;
+    }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-2);
+    }
+
+    .section-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(155,89,255,0.3), transparent);
+    }
+
+    .section-count {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--purple);
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Post list ── */
+    .post-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .post-item {
+      border-top: 1px solid rgba(155, 89, 255, 0.12);
+      padding: 1.5rem 0;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      align-items: start;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .post-item:last-child {
+      border-bottom: 1px solid rgba(155, 89, 255, 0.12);
+    }
+
+    .post-item::before {
+      content: '';
+      position: absolute;
+      left: -1.5rem;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(180deg, var(--purple), var(--cyan));
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .post-item:hover::before { opacity: 1; }
+
+    .post-item a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .post-title {
+      font-family: var(--sans);
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.3;
+      margin-bottom: 0.4rem;
+      display: block;
+      transition: color 0.2s;
+    }
+
+    .post-item:hover .post-title { color: var(--cyan); }
+
+    .post-desc {
+      font-size: 0.85rem;
+      color: var(--text-2);
+      line-height: 1.5;
+      font-family: var(--mono);
+    }
+
+    .post-date {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--purple);
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      padding-top: 0.3rem;
+      opacity: 0.8;
+    }
+
+    /* ── Footer ── */
+    .site-footer {
+      margin-top: 4rem;
+      padding: 1.5rem 0;
+      border-top: 1px solid rgba(155, 89, 255, 0.15);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .footer-text {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-2);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .footer-text span { color: var(--purple); }
+
+    /* ── Glitch animation on logo hover ── */
+    .logo:hover .accent {
+      animation: glitch 0.3s ease;
+    }
+
+    @keyframes glitch {
+      0% { text-shadow: none; }
+      20% { text-shadow: -2px 0 var(--purple), 2px 0 var(--cyan); }
+      40% { text-shadow: 2px 0 var(--purple), -2px 0 var(--cyan); }
+      60% { text-shadow: -1px 0 var(--cyan); }
+      80% { text-shadow: 1px 0 var(--purple); }
+      100% { text-shadow: none; }
+    }
+
+    /* ── Fade in ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero { animation: fadeUp 0.6s ease both; }
+    .post-item { animation: fadeUp 0.5s ease both; }
+    .post-item:nth-child(1) { animation-delay: 0.1s; }
+    .post-item:nth-child(2) { animation-delay: 0.18s; }
+    .post-item:nth-child(3) { animation-delay: 0.26s; }
+    .post-item:nth-child(4) { animation-delay: 0.34s; }
+    .post-item:nth-child(5) { animation-delay: 0.42s; }
+
+    @media (max-width: 520px) {
+      .post-item { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 2.2rem; }
+    }
+  </style>
 </head>
 <body>
-  <Header />
-  <main class="wrapper">
 
-    <section class="bio">
-      <p class="bio-label">Est. 2026 · Delhi, India</p>
-      <h1>Sharp takes on <em>tech & law.</em></h1>
-      <p>
-        Law student at NLU Mumbai, soon-to-be graduate. Proper Delhite. 
-        Fascinated by AI, technology law, and what happens when the two collide. 
-        This is where I think out loud.
+  <canvas id="neural-canvas"></canvas>
+
+  <div class="page">
+    <header class="site-header">
+      <a href="/" class="logo">harsh<span class="accent">takes</span><span class="dot">.</span>lol</a>
+      <nav class="nav">
+        <a href="/blog">writing</a>
+        <a href="/about">about</a>
+        <div class="status-dot" title="online"></div>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="hero-label">signal active — delhi, india</div>
+      <h1>
+        <span class="line1">Law meets machine.<br /></span>
+        <span class="line2">Harsh takes only.</span>
+      </h1>
+      <p class="hero-bio">
+        Law student at NLU Mumbai. Soon-to-be graduate. Proper Delhite.
+        I write about AI, technology law, and the collisions between them —
+        the way you'd explain it to a friend, not a courtroom.
       </p>
-      <div class="bio-tags">
-        <span class="bio-tag">tech law</span>
-        <span class="bio-tag">AI</span>
-        <span class="bio-tag">Delhi</span>
-        <span class="bio-tag">NLU Mumbai</span>
-        <span class="bio-tag">opinions</span>
+      <div class="hero-tags">
+        <span class="tag">tech law</span>
+        <span class="tag">AI</span>
+        <span class="tag cyan">opinions</span>
+        <span class="tag cyan">NLU Mumbai</span>
+        <span class="tag">Delhi</span>
       </div>
     </section>
 
-    <div class="posts-header">Writing — {posts.length} posts</div>
+    <div class="section-head">
+      <span class="section-label">transmissions</span>
+      <div class="section-line"></div>
+      <span class="section-count">{posts.length} posts</span>
+    </div>
 
     <ul class="post-list">
       {posts.map((post) => (
@@ -67,11 +441,149 @@ function formatDate(date) {
       ))}
     </ul>
 
-  </main>
+    <footer class="site-footer">
+      <span class="footer-text">© {new Date().getFullYear()} <span>Harshvardhan Mudgal</span></span>
+      <span class="footer-text">harshtakes<span>.lol</span></span>
+    </footer>
+  </div>
 
-  <footer class="site-footer">
-    <span class="footer-text">© {new Date().getFullYear()} Harshvardhan Mudgal</span>
-    <span class="footer-text">harshtakes.lol</span>
-  </footer>
+  <script>
+    const canvas = document.getElementById('neural-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let W, H, nodes, pulses;
+
+    const PURPLE = '#9b59ff';
+    const CYAN = '#00f5ff';
+    const NODE_COUNT = 55;
+    const CONNECTION_DIST = 160;
+
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+
+    function initNodes() {
+      nodes = Array.from({ length: NODE_COUNT }, () => ({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        r: Math.random() * 2 + 1,
+        color: Math.random() > 0.5 ? PURPLE : CYAN,
+      }));
+      pulses = [];
+    }
+
+    function spawnPulse() {
+      if (pulses.length > 18) return;
+      const from = Math.floor(Math.random() * nodes.length);
+      const candidates = [];
+      for (let i = 0; i < nodes.length; i++) {
+        if (i === from) continue;
+        const dx = nodes[i].x - nodes[from].x;
+        const dy = nodes[i].y - nodes[from].y;
+        if (Math.sqrt(dx * dx + dy * dy) < CONNECTION_DIST) candidates.push(i);
+      }
+      if (!candidates.length) return;
+      const to = candidates[Math.floor(Math.random() * candidates.length)];
+      pulses.push({
+        from, to,
+        progress: 0,
+        speed: Math.random() * 0.012 + 0.008,
+        color: Math.random() > 0.5 ? CYAN : PURPLE,
+        size: Math.random() * 2.5 + 1.5,
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+
+      // Move nodes
+      nodes.forEach(n => {
+        n.x += n.vx;
+        n.y += n.vy;
+        if (n.x < 0 || n.x > W) n.vx *= -1;
+        if (n.y < 0 || n.y > H) n.vy *= -1;
+      });
+
+      // Draw connections
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[j].x - nodes[i].x;
+          const dy = nodes[j].y - nodes[i].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < CONNECTION_DIST) {
+            const alpha = (1 - dist / CONNECTION_DIST) * 0.18;
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = `rgba(155, 89, 255, ${alpha})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw nodes
+      nodes.forEach(n => {
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        const isC = n.color === CYAN;
+        ctx.fillStyle = isC ? 'rgba(0,245,255,0.7)' : 'rgba(155,89,255,0.7)';
+        ctx.fill();
+        // glow
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r * 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = isC ? 'rgba(0,245,255,0.07)' : 'rgba(155,89,255,0.07)';
+        ctx.fill();
+      });
+
+      // Draw pulses
+      pulses.forEach((p, idx) => {
+        p.progress += p.speed;
+        if (p.progress >= 1) {
+          pulses.splice(idx, 1);
+          return;
+        }
+        const from = nodes[p.from];
+        const to = nodes[p.to];
+        const x = from.x + (to.x - from.x) * p.progress;
+        const y = from.y + (to.y - from.y) * p.progress;
+
+        const isCyan = p.color === CYAN;
+
+        // Trail
+        ctx.beginPath();
+        ctx.moveTo(from.x + (to.x - from.x) * Math.max(0, p.progress - 0.18),
+                   from.y + (to.y - from.y) * Math.max(0, p.progress - 0.18));
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = isCyan ? 'rgba(0,245,255,0.5)' : 'rgba(155,89,255,0.5)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Head
+        ctx.beginPath();
+        ctx.arc(x, y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+
+        // Head glow
+        ctx.beginPath();
+        ctx.arc(x, y, p.size * 3, 0, Math.PI * 2);
+        ctx.fillStyle = isCyan ? 'rgba(0,245,255,0.15)' : 'rgba(155,89,255,0.15)';
+        ctx.fill();
+      });
+
+      requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', () => { resize(); initNodes(); });
+    resize();
+    initNodes();
+    draw();
+    setInterval(spawnPulse, 280);
+  </script>
+
 </body>
 </html>
