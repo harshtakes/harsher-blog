@@ -19,571 +19,582 @@ function formatDate(date) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>harshtakes.lol — Harsh Mudgal</title>
-  <meta name="description" content="Tech, law, AI and everything in between. By Harshvardhan Mudgal." />
+  <meta name="description" content="Tech, law, AI. By Harshvardhan Mudgal." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg: #050508;
-      --bg2: #0a0a12;
-      --purple: #9b59ff;
-      --cyan: #00f5ff;
-      --purple-dim: rgba(155, 89, 255, 0.15);
-      --cyan-dim: rgba(0, 245, 255, 0.1);
-      --purple-border: rgba(155, 89, 255, 0.3);
-      --cyan-border: rgba(0, 245, 255, 0.25);
-      --text: #e8e6f0;
-      --text-2: #8b87a0;
+      --bg: #020408;
+      --purple: #a855f7;
+      --cyan: #06b6d4;
+      --green: #10b981;
+      --pink: #ec4899;
+      --text: #e2e8f0;
+      --text2: #64748b;
       --mono: 'Share Tech Mono', monospace;
+      --orb: 'Orbitron', sans-serif;
       --sans: 'Outfit', sans-serif;
     }
+    html, body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; cursor: none; }
 
-    html, body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--sans);
-      font-weight: 300;
-      min-height: 100vh;
-      overflow-x: hidden;
-      -webkit-font-smoothing: antialiased;
+    /* ── BOOT SCREEN ── */
+    #boot {
+      position: fixed; inset: 0; background: #000; z-index: 9999;
+      display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+      padding: 3rem; font-family: var(--mono); font-size: 0.8rem;
+      transition: opacity 0.6s ease;
+    }
+    #boot.fade-out { opacity: 0; pointer-events: none; }
+    #boot-text { color: #10b981; line-height: 2; }
+    #boot-cursor { display: inline-block; width: 10px; height: 1.1em; background: #10b981; animation: blink 0.7s step-end infinite; vertical-align: text-bottom; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── CUSTOM CURSOR ── */
+    #cursor { position: fixed; width: 20px; height: 20px; pointer-events: none; z-index: 9998; transform: translate(-50%, -50%); }
+    #cursor-ring { position: absolute; inset: 0; border: 1px solid var(--cyan); border-radius: 50%; animation: cursor-pulse 1.5s ease-in-out infinite; }
+    #cursor-dot { position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: var(--cyan); border-radius: 50%; transform: translate(-50%,-50%); }
+    #cursor-cross-h { position: absolute; top: 50%; left: -6px; right: -6px; height: 1px; background: var(--cyan); opacity: 0.6; }
+    #cursor-cross-v { position: absolute; left: 50%; top: -6px; bottom: -6px; width: 1px; background: var(--cyan); opacity: 0.6; }
+    @keyframes cursor-pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.5; } }
+
+    /* ── CANVAS LAYERS ── */
+    #neural-canvas, #binary-canvas, #trail-canvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+    }
+    #neural-canvas { z-index: 0; opacity: 0.6; }
+    #binary-canvas { z-index: 1; opacity: 0.15; }
+    #trail-canvas { z-index: 2; }
+
+    /* ── SCANLINES + GRID ── */
+    .scanlines {
+      position: fixed; inset: 0; z-index: 3; pointer-events: none;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 4px);
+    }
+    .grid-overlay {
+      position: fixed; inset: 0; z-index: 3; pointer-events: none;
+      background-image: linear-gradient(rgba(6,182,212,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(6,182,212,0.04) 1px, transparent 1px);
+      background-size: 50px 50px;
     }
 
-    /* ── Neural Canvas ── */
-    #neural-canvas {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      z-index: 0;
-      opacity: 0.55;
-    }
+    /* ── HUD CORNERS ── */
+    .hud { position: fixed; z-index: 10; font-family: var(--mono); font-size: 0.6rem; color: var(--cyan); opacity: 0.7; pointer-events: none; }
+    .hud-tl { top: 1rem; left: 1rem; }
+    .hud-tr { top: 1rem; right: 1rem; text-align: right; }
+    .hud-bl { bottom: 1rem; left: 1rem; }
+    .hud-br { bottom: 1rem; right: 1rem; text-align: right; }
+    .hud-line { line-height: 1.8; letter-spacing: 0.08em; }
+    .hud-val { color: var(--purple); }
+    .hud-bar { display: inline-block; width: 60px; height: 4px; background: rgba(168,85,247,0.2); vertical-align: middle; margin-left: 4px; position: relative; overflow: hidden; }
+    .hud-bar-fill { height: 100%; background: var(--purple); transition: width 1s ease; }
 
-    /* ── Scanline overlay ── */
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0, 0, 0, 0.08) 2px,
-        rgba(0, 0, 0, 0.08) 4px
-      );
-      z-index: 1;
-      pointer-events: none;
-    }
+    /* ── HUD CORNER BRACKETS ── */
+    .hud-bracket { position: fixed; z-index: 10; pointer-events: none; }
+    .hud-bracket svg { opacity: 0.4; }
+    .hud-bracket.tl { top: 0.5rem; left: 0.5rem; }
+    .hud-bracket.tr { top: 0.5rem; right: 0.5rem; transform: scaleX(-1); }
+    .hud-bracket.bl { bottom: 0.5rem; left: 0.5rem; transform: scaleY(-1); }
+    .hud-bracket.br { bottom: 0.5rem; right: 0.5rem; transform: scale(-1); }
 
-    /* ── Grid overlay ── */
-    body::after {
-      content: '';
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background-image:
-        linear-gradient(rgba(155, 89, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(155, 89, 255, 0.03) 1px, transparent 1px);
-      background-size: 60px 60px;
-      z-index: 1;
-      pointer-events: none;
-    }
+    /* ── MAIN CONTENT ── */
+    .page { position: relative; z-index: 5; max-width: 800px; margin: 0 auto; padding: 0 2rem 8rem; }
 
-    /* ── Layout ── */
-    .page {
-      position: relative;
-      z-index: 2;
-      max-width: 760px;
-      margin: 0 auto;
-      padding: 0 1.5rem 6rem;
-    }
-
-    /* ── Header ── */
-    .site-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 2rem 0 1.5rem;
-      border-bottom: 1px solid rgba(155, 89, 255, 0.2);
-      margin-bottom: 0;
-    }
-
-    .logo {
-      font-family: var(--mono);
-      font-size: 1rem;
-      color: var(--text);
-      text-decoration: none;
-      letter-spacing: 0.02em;
-    }
-
-    .logo .accent { color: var(--cyan); }
-    .logo .dot { color: var(--purple); }
-
-    .nav {
-      display: flex;
-      align-items: center;
-      gap: 1.8rem;
-    }
-
-    .nav a {
-      font-family: var(--mono);
-      font-size: 0.72rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-2);
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-
+    /* ── HEADER ── */
+    .site-header { display: flex; justify-content: space-between; align-items: center; padding: 2rem 0 1.5rem; border-bottom: 1px solid rgba(6,182,212,0.15); }
+    .logo { font-family: var(--orb); font-size: 0.85rem; font-weight: 700; color: var(--text); text-decoration: none; letter-spacing: 0.1em; text-transform: uppercase; }
+    .logo .a1 { color: var(--cyan); text-shadow: 0 0 20px var(--cyan), 0 0 40px rgba(6,182,212,0.4); }
+    .logo .a2 { color: var(--purple); }
+    .nav { display: flex; align-items: center; gap: 2rem; }
+    .nav a { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text2); text-decoration: none; position: relative; transition: color 0.2s; padding: 0.3em 0; }
+    .nav a::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px; background: var(--cyan); transform: scaleX(0); transition: transform 0.2s; }
     .nav a:hover { color: var(--cyan); }
+    .nav a:hover::after { transform: scaleX(1); }
+    .signal { display: flex; align-items: center; gap: 0.5rem; font-family: var(--mono); font-size: 0.6rem; color: var(--green); letter-spacing: 0.1em; }
+    .signal-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: sig 1.8s ease-in-out infinite; }
+    @keyframes sig { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
 
-    .status-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--cyan);
-      box-shadow: 0 0 8px var(--cyan), 0 0 16px rgba(0,245,255,0.4);
-      animation: pulse 2s ease-in-out infinite;
+    /* ── HERO ── */
+    .hero { padding: 5rem 0 3.5rem; }
+    .hero-eyebrow { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; }
+    .hero-eyebrow::before { content: ''; display: block; width: 30px; height: 1px; background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .hero-eyebrow::after { content: ''; display: block; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(16,185,129,0.3), transparent); }
+
+    .glitch-title { font-family: var(--orb); font-size: clamp(2rem, 5.5vw, 3.8rem); font-weight: 900; line-height: 1.05; letter-spacing: -0.01em; margin-bottom: 0.5rem; position: relative; }
+    .glitch-title .t1 { display: block; color: var(--text); }
+    .glitch-title .t2 { display: block; background: linear-gradient(90deg, var(--purple), var(--cyan), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; background-size: 200% 100%; animation: shimmer 3s linear infinite; }
+    @keyframes shimmer { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
+
+    .hero-sub { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; color: var(--purple); margin-bottom: 1.8rem; }
+    .hero-bio { font-size: 0.95rem; color: var(--text2); max-width: 480px; line-height: 1.8; margin-bottom: 2rem; }
+
+    .tag-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .tag { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.3em 0.9em; border-radius: 1px; position: relative; overflow: hidden; transition: all 0.2s; cursor: none; }
+    .tag::before { content: ''; position: absolute; inset: 0; transform: translateX(-100%); transition: transform 0.3s ease; }
+    .tag:hover::before { transform: translateX(0); }
+    .tag-p { border: 1px solid rgba(168,85,247,0.4); color: var(--purple); background: rgba(168,85,247,0.08); }
+    .tag-p::before { background: rgba(168,85,247,0.15); }
+    .tag-c { border: 1px solid rgba(6,182,212,0.4); color: var(--cyan); background: rgba(6,182,212,0.08); }
+    .tag-c::before { background: rgba(6,182,212,0.15); }
+    .tag-g { border: 1px solid rgba(16,185,129,0.4); color: var(--green); background: rgba(16,185,129,0.08); }
+    .tag-g::before { background: rgba(16,185,129,0.15); }
+
+    /* ── DIVIDER ── */
+    .divider { display: flex; align-items: center; gap: 1rem; margin: 2.5rem 0 1.5rem; }
+    .div-label { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text2); white-space: nowrap; }
+    .div-line { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(168,85,247,0.4), transparent); }
+    .div-count { font-family: var(--mono); font-size: 0.6rem; color: var(--purple); letter-spacing: 0.06em; white-space: nowrap; }
+
+    /* ── POST CARDS ── */
+    .post-list { list-style: none; display: flex; flex-direction: column; gap: 0.8rem; }
+
+    .post-card {
+      position: relative; border: 1px solid rgba(168,85,247,0.15);
+      background: rgba(10,10,20,0.6); backdrop-filter: blur(10px);
+      padding: 1.4rem 1.6rem; cursor: none;
+      transition: border-color 0.3s, transform 0.2s;
+      overflow: hidden;
     }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(0.85); }
+    .post-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      transform: translateX(-100%); transition: transform 0s;
     }
-
-    /* ── Hero ── */
-    .hero {
-      padding: 5rem 0 4rem;
-      position: relative;
+    .post-card:hover::before { transform: translateX(100%); transition: transform 0.6s ease; }
+    .post-card::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(168,85,247,0.04), rgba(6,182,212,0.04));
+      opacity: 0; transition: opacity 0.3s;
     }
+    .post-card:hover::after { opacity: 1; }
+    .post-card:hover { border-color: rgba(6,182,212,0.4); transform: translateX(4px); }
 
-    .hero-label {
-      font-family: var(--mono);
-      font-size: 0.7rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--cyan);
-      margin-bottom: 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.7rem;
+    .scan-line {
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(6,182,212,0.6), transparent);
+      transform: translateY(-2px); transition: transform 0s;
+      pointer-events: none;
     }
+    .post-card:hover .scan-line { transform: translateY(100px); transition: transform 0.8s linear; }
 
-    .hero-label::before {
-      content: '';
-      display: inline-block;
-      width: 24px;
-      height: 1px;
-      background: var(--cyan);
-      box-shadow: 0 0 8px var(--cyan);
-    }
+    .card-inner { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start; position: relative; z-index: 1; }
+    .card-inner a { text-decoration: none; color: inherit; }
 
-    .hero h1 {
-      font-family: var(--sans);
-      font-size: clamp(2.4rem, 6vw, 4rem);
-      font-weight: 600;
-      line-height: 1.1;
-      letter-spacing: -0.02em;
-      margin-bottom: 1.5rem;
-    }
+    .card-index { font-family: var(--mono); font-size: 0.55rem; color: rgba(168,85,247,0.4); letter-spacing: 0.1em; margin-bottom: 0.4rem; }
+    .post-title { font-family: var(--sans); font-size: 1rem; font-weight: 500; color: var(--text); line-height: 1.3; margin-bottom: 0.4rem; display: block; transition: color 0.2s; }
+    .post-card:hover .post-title { color: var(--cyan); }
+    .post-desc { font-family: var(--mono); font-size: 0.72rem; color: var(--text2); line-height: 1.5; }
+    .post-date { font-family: var(--mono); font-size: 0.62rem; color: var(--purple); white-space: nowrap; padding-top: 0.2rem; opacity: 0.8; letter-spacing: 0.04em; }
 
-    .hero h1 .line1 { color: var(--text); }
-    .hero h1 .line2 {
-      background: linear-gradient(90deg, var(--purple), var(--cyan));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
+    .card-corner { position: absolute; bottom: 0.6rem; right: 0.8rem; font-family: var(--mono); font-size: 0.55rem; color: rgba(6,182,212,0.25); letter-spacing: 0.06em; }
 
-    .hero-bio {
-      font-size: 1rem;
-      color: var(--text-2);
-      max-width: 500px;
-      line-height: 1.75;
-      margin-bottom: 2rem;
-    }
+    /* ── FOOTER ── */
+    .site-footer { margin-top: 5rem; padding: 1.5rem 0; border-top: 1px solid rgba(6,182,212,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+    .footer-text { font-family: var(--mono); font-size: 0.6rem; color: var(--text2); letter-spacing: 0.08em; text-transform: uppercase; }
+    .footer-text span { color: var(--cyan); }
 
-    .hero-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.6rem;
-    }
+    /* ── FADE IN ── */
+    @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+    .hero { animation: fadeUp 0.7s 1.8s ease both; }
+    .post-card { animation: fadeUp 0.5s ease both; }
+    .post-card:nth-child(1){animation-delay:2s}
+    .post-card:nth-child(2){animation-delay:2.1s}
+    .post-card:nth-child(3){animation-delay:2.2s}
+    .post-card:nth-child(4){animation-delay:2.3s}
+    .post-card:nth-child(5){animation-delay:2.4s}
+    .site-header { animation: fadeUp 0.5s 1.6s ease both; }
 
-    .tag {
-      font-family: var(--mono);
-      font-size: 0.68rem;
-      letter-spacing: 0.06em;
-      padding: 0.3em 0.8em;
-      border-radius: 2px;
-      border: 1px solid var(--purple-border);
-      color: var(--purple);
-      background: var(--purple-dim);
-      text-transform: uppercase;
-    }
-
-    .tag.cyan {
-      border-color: var(--cyan-border);
-      color: var(--cyan);
-      background: var(--cyan-dim);
-    }
-
-    /* ── Section header ── */
-    .section-head {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-      padding-top: 1rem;
-    }
-
-    .section-label {
-      font-family: var(--mono);
-      font-size: 0.68rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--text-2);
-    }
-
-    .section-line {
-      flex: 1;
-      height: 1px;
-      background: linear-gradient(90deg, rgba(155,89,255,0.3), transparent);
-    }
-
-    .section-count {
-      font-family: var(--mono);
-      font-size: 0.65rem;
-      color: var(--purple);
-      letter-spacing: 0.05em;
-    }
-
-    /* ── Post list ── */
-    .post-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-
-    .post-item {
-      border-top: 1px solid rgba(155, 89, 255, 0.12);
-      padding: 1.5rem 0;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 1rem;
-      align-items: start;
-      transition: all 0.2s;
-      position: relative;
-    }
-
-    .post-item:last-child {
-      border-bottom: 1px solid rgba(155, 89, 255, 0.12);
-    }
-
-    .post-item::before {
-      content: '';
-      position: absolute;
-      left: -1.5rem;
-      top: 0;
-      bottom: 0;
-      width: 2px;
-      background: linear-gradient(180deg, var(--purple), var(--cyan));
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-
-    .post-item:hover::before { opacity: 1; }
-
-    .post-item a {
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .post-title {
-      font-family: var(--sans);
-      font-size: 1.05rem;
-      font-weight: 500;
-      color: var(--text);
-      line-height: 1.3;
-      margin-bottom: 0.4rem;
-      display: block;
-      transition: color 0.2s;
-    }
-
-    .post-item:hover .post-title { color: var(--cyan); }
-
-    .post-desc {
-      font-size: 0.85rem;
-      color: var(--text-2);
-      line-height: 1.5;
-      font-family: var(--mono);
-    }
-
-    .post-date {
-      font-family: var(--mono);
-      font-size: 0.65rem;
-      color: var(--purple);
-      letter-spacing: 0.05em;
-      white-space: nowrap;
-      padding-top: 0.3rem;
-      opacity: 0.8;
-    }
-
-    /* ── Footer ── */
-    .site-footer {
-      margin-top: 4rem;
-      padding: 1.5rem 0;
-      border-top: 1px solid rgba(155, 89, 255, 0.15);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .footer-text {
-      font-family: var(--mono);
-      font-size: 0.65rem;
-      color: var(--text-2);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .footer-text span { color: var(--purple); }
-
-    /* ── Glitch animation on logo hover ── */
-    .logo:hover .accent {
-      animation: glitch 0.3s ease;
-    }
-
-    @keyframes glitch {
-      0% { text-shadow: none; }
-      20% { text-shadow: -2px 0 var(--purple), 2px 0 var(--cyan); }
-      40% { text-shadow: 2px 0 var(--purple), -2px 0 var(--cyan); }
-      60% { text-shadow: -1px 0 var(--cyan); }
-      80% { text-shadow: 1px 0 var(--purple); }
-      100% { text-shadow: none; }
-    }
-
-    /* ── Fade in ── */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .hero { animation: fadeUp 0.6s ease both; }
-    .post-item { animation: fadeUp 0.5s ease both; }
-    .post-item:nth-child(1) { animation-delay: 0.1s; }
-    .post-item:nth-child(2) { animation-delay: 0.18s; }
-    .post-item:nth-child(3) { animation-delay: 0.26s; }
-    .post-item:nth-child(4) { animation-delay: 0.34s; }
-    .post-item:nth-child(5) { animation-delay: 0.42s; }
-
-    @media (max-width: 520px) {
-      .post-item { grid-template-columns: 1fr; }
-      .hero h1 { font-size: 2.2rem; }
+    @media(max-width:520px){
+      .glitch-title{font-size:1.8rem}
+      .card-inner{grid-template-columns:1fr}
+      .hud-tr,.hud-br{display:none}
     }
   </style>
 </head>
 <body>
 
-  <canvas id="neural-canvas"></canvas>
+  <!-- Boot Screen -->
+  <div id="boot">
+    <div id="boot-text"></div>
+    <span id="boot-cursor"></span>
+  </div>
 
+  <!-- Custom Cursor -->
+  <div id="cursor">
+    <div id="cursor-ring"></div>
+    <div id="cursor-dot"></div>
+    <div id="cursor-cross-h"></div>
+    <div id="cursor-cross-v"></div>
+  </div>
+
+  <!-- Canvas Layers -->
+  <canvas id="neural-canvas"></canvas>
+  <canvas id="binary-canvas"></canvas>
+  <canvas id="trail-canvas"></canvas>
+
+  <!-- Overlays -->
+  <div class="scanlines"></div>
+  <div class="grid-overlay"></div>
+
+  <!-- HUD Corner Brackets -->
+  <div class="hud-bracket tl"><svg width="30" height="30" fill="none"><path d="M0 30 L0 0 L30 0" stroke="#06b6d4" stroke-width="1.5"/></svg></div>
+  <div class="hud-bracket tr"><svg width="30" height="30" fill="none"><path d="M0 30 L0 0 L30 0" stroke="#06b6d4" stroke-width="1.5"/></svg></div>
+  <div class="hud-bracket bl"><svg width="30" height="30" fill="none"><path d="M0 30 L0 0 L30 0" stroke="#06b6d4" stroke-width="1.5"/></svg></div>
+  <div class="hud-bracket br"><svg width="30" height="30" fill="none"><path d="M0 30 L0 0 L30 0" stroke="#06b6d4" stroke-width="1.5"/></svg></div>
+
+  <!-- HUD Readouts -->
+  <div class="hud hud-tl">
+    <div class="hud-line">SYS <span class="hud-val" id="h-status">ONLINE</span></div>
+    <div class="hud-line">NODE <span class="hud-val" id="h-nodes">--</span></div>
+    <div class="hud-line">LAT <span class="hud-val">28.6139°N</span></div>
+    <div class="hud-line">LON <span class="hud-val">77.2090°E</span></div>
+  </div>
+  <div class="hud hud-tr">
+    <div class="hud-line"><span class="hud-val" id="h-time">--:--:--</span> IST</div>
+    <div class="hud-line">MEM <span class="hud-val" id="h-mem">--</span>%<div class="hud-bar"><div class="hud-bar-fill" id="h-mem-bar" style="width:0%"></div></div></div>
+    <div class="hud-line">NET <span class="hud-val" id="h-net">--</span> ms</div>
+    <div class="hud-line">VER <span class="hud-val">2.6.1</span></div>
+  </div>
+  <div class="hud hud-bl">
+    <div class="hud-line">© 2026 HARSHTAKES.LOL</div>
+    <div class="hud-line">SIGNAL <span class="hud-val">ACTIVE</span></div>
+  </div>
+  <div class="hud hud-br">
+    <div class="hud-line">FRAME <span class="hud-val" id="h-fps">--</span></div>
+    <div class="hud-line">NODES <span class="hud-val" id="h-conn">--</span></div>
+  </div>
+
+  <!-- Main Content -->
   <div class="page">
     <header class="site-header">
-      <a href="/" class="logo">harsh<span class="accent">takes</span><span class="dot">.</span>lol</a>
+      <a href="/" class="logo">harsh<span class="a1">takes</span><span class="a2">.</span>lol</a>
       <nav class="nav">
         <a href="/blog">writing</a>
         <a href="/about">about</a>
-        <div class="status-dot" title="online"></div>
+        <div class="signal"><div class="signal-dot"></div>LIVE</div>
       </nav>
     </header>
 
     <section class="hero">
-      <div class="hero-label">signal active — delhi, india</div>
-      <h1>
-        <span class="line1">Law meets machine.<br /></span>
-        <span class="line2">Harsh takes only.</span>
+      <div class="hero-eyebrow">neural signal active — delhi, india — 2026</div>
+      <h1 class="glitch-title">
+        <span class="t1" id="glitch-1">LAW MEETS MACHINE.</span>
+        <span class="t2" id="glitch-2">HARSH TAKES ONLY.</span>
       </h1>
+      <div class="hero-sub">// harshvardhan mudgal · nlu_mumbai · tech_law · ai_observer</div>
       <p class="hero-bio">
         Law student at NLU Mumbai. Soon-to-be graduate. Proper Delhite.
         I write about AI, technology law, and the collisions between them —
         the way you'd explain it to a friend, not a courtroom.
       </p>
-      <div class="hero-tags">
-        <span class="tag">tech law</span>
-        <span class="tag">AI</span>
-        <span class="tag cyan">opinions</span>
-        <span class="tag cyan">NLU Mumbai</span>
-        <span class="tag">Delhi</span>
+      <div class="tag-row">
+        <span class="tag tag-p">tech law</span>
+        <span class="tag tag-c">AI</span>
+        <span class="tag tag-g">opinions</span>
+        <span class="tag tag-p">NLU Mumbai</span>
+        <span class="tag tag-c">Delhi</span>
+        <span class="tag tag-g">2026</span>
       </div>
     </section>
 
-    <div class="section-head">
-      <span class="section-label">transmissions</span>
-      <div class="section-line"></div>
-      <span class="section-count">{posts.length} posts</span>
+    <div class="divider">
+      <span class="div-label">transmissions</span>
+      <div class="div-line"></div>
+      <span class="div-count">{posts.length} signals</span>
     </div>
 
     <ul class="post-list">
-      {posts.map((post) => (
-        <li class="post-item">
-          <a href={`/blog/${post.slug}`}>
-            <span class="post-title">{post.data.title}</span>
-            {post.data.description && (
-              <span class="post-desc">{post.data.description}</span>
-            )}
-          </a>
-          <span class="post-date">{formatDate(post.data.pubDate)}</span>
+      {posts.map((post, i) => (
+        <li class="post-card">
+          <div class="scan-line"></div>
+          <div class="card-inner">
+            <a href={`/blog/${post.slug}`}>
+              <div class="card-index">SIGNAL_{String(i + 1).padStart(3, '0')}</div>
+              <span class="post-title">{post.data.title}</span>
+              {post.data.description && (
+                <span class="post-desc">{post.data.description}</span>
+              )}
+            </a>
+            <span class="post-date">{formatDate(post.data.pubDate)}</span>
+          </div>
+          <div class="card-corner">READ →</div>
         </li>
       ))}
     </ul>
 
     <footer class="site-footer">
-      <span class="footer-text">© {new Date().getFullYear()} <span>Harshvardhan Mudgal</span></span>
-      <span class="footer-text">harshtakes<span>.lol</span></span>
+      <span class="footer-text">© 2026 <span>Harshvardhan Mudgal</span></span>
+      <span class="footer-text">harsh<span>takes.lol</span></span>
     </footer>
   </div>
 
   <script>
-    const canvas = document.getElementById('neural-canvas');
-    const ctx = canvas.getContext('2d');
+    // ── BOOT SEQUENCE ──
+    const bootLines = [
+      'HARSHTAKES.LOL // BOOT SEQUENCE v2.6.1',
+      '> INITIALIZING NEURAL MESH...',
+      '> LOADING SIGNAL MATRIX.............. OK',
+      '> ESTABLISHING NODE CONNECTIONS...... OK',
+      '> CALIBRATING TECH-LAW INTERFACE..... OK',
+      '> SCANNING DELHI SECTOR.............. FOUND',
+      '> NLU_MUMBAI NODE VERIFIED........... OK',
+      '> ALL SYSTEMS NOMINAL',
+      '> LAUNCHING INTERFACE...',
+    ];
 
-    let W, H, nodes, pulses;
+    const bootEl = document.getElementById('boot');
+    const bootText = document.getElementById('boot-text');
+    let lineIdx = 0;
 
-    const PURPLE = '#9b59ff';
-    const CYAN = '#00f5ff';
-    const NODE_COUNT = 55;
-    const CONNECTION_DIST = 160;
+    function typeLine(line, cb) {
+      let i = 0;
+      const span = document.createElement('div');
+      bootText.appendChild(span);
+      const t = setInterval(() => {
+        span.textContent += line[i++];
+        if (i >= line.length) { clearInterval(t); setTimeout(cb, 80); }
+      }, 18);
+    }
+
+    function bootNext() {
+      if (lineIdx >= bootLines.length) {
+        setTimeout(() => {
+          bootEl.classList.add('fade-out');
+          setTimeout(() => { bootEl.style.display = 'none'; }, 650);
+        }, 300);
+        return;
+      }
+      typeLine(bootLines[lineIdx++], bootNext);
+    }
+
+    bootNext();
+
+    // ── CUSTOM CURSOR ──
+    const cursor = document.getElementById('cursor');
+    let mx = -100, my = -100;
+    document.addEventListener('mousemove', e => {
+      mx = e.clientX; my = e.clientY;
+      cursor.style.left = mx + 'px';
+      cursor.style.top = my + 'px';
+    });
+
+    // ── TRAIL CANVAS ──
+    const trailCanvas = document.getElementById('trail-canvas');
+    const tc = trailCanvas.getContext('2d');
+    const trails = [];
+
+    document.addEventListener('mousemove', e => {
+      trails.push({ x: e.clientX, y: e.clientY, life: 1, size: 3 });
+      if (trails.length > 60) trails.shift();
+    });
+
+    // ── NEURAL CANVAS ──
+    const nc = document.getElementById('neural-canvas');
+    const nctx = nc.getContext('2d');
+
+    // ── BINARY RAIN ──
+    const bc = document.getElementById('binary-canvas');
+    const bctx = bc.getContext('2d');
+
+    let W, H;
+    const PURPLE = '#a855f7', CYAN = '#06b6d4', GREEN = '#10b981';
+    const NODE_COUNT = 80;
+    let nodes, pulses, drops, frameCount = 0, lastFPS = 0, lastTime = 0;
 
     function resize() {
-      W = canvas.width = window.innerWidth;
-      H = canvas.height = window.innerHeight;
+      W = nc.width = bc.width = trailCanvas.width = window.innerWidth;
+      H = nc.height = bc.height = trailCanvas.height = window.innerHeight;
     }
 
     function initNodes() {
-      nodes = Array.from({ length: NODE_COUNT }, () => ({
-        x: Math.random() * W,
-        y: Math.random() * H,
-        vx: (Math.random() - 0.5) * 0.35,
-        vy: (Math.random() - 0.5) * 0.35,
-        r: Math.random() * 2 + 1,
-        color: Math.random() > 0.5 ? PURPLE : CYAN,
+      nodes = Array.from({ length: NODE_COUNT }, (_, i) => ({
+        x: Math.random() * W, y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2.5 + 0.8,
+        color: [PURPLE, CYAN, GREEN][Math.floor(Math.random() * 3)],
+        flicker: Math.random() * Math.PI * 2,
       }));
       pulses = [];
+
+      // Binary rain drops
+      const cols = Math.floor(W / 14);
+      drops = Array.from({ length: cols }, () => ({
+        x: Math.random() * W,
+        y: Math.random() * H - H,
+        speed: Math.random() * 1.5 + 0.5,
+        chars: [],
+        len: Math.floor(Math.random() * 20) + 8,
+      }));
     }
 
     function spawnPulse() {
-      if (pulses.length > 18) return;
+      if (pulses.length > 25) return;
       const from = Math.floor(Math.random() * nodes.length);
-      const candidates = [];
+      const cands = [];
       for (let i = 0; i < nodes.length; i++) {
         if (i === from) continue;
-        const dx = nodes[i].x - nodes[from].x;
-        const dy = nodes[i].y - nodes[from].y;
-        if (Math.sqrt(dx * dx + dy * dy) < CONNECTION_DIST) candidates.push(i);
+        const dx = nodes[i].x - nodes[from].x, dy = nodes[i].y - nodes[from].y;
+        if (Math.sqrt(dx*dx+dy*dy) < 180) cands.push(i);
       }
-      if (!candidates.length) return;
-      const to = candidates[Math.floor(Math.random() * candidates.length)];
-      pulses.push({
-        from, to,
-        progress: 0,
-        speed: Math.random() * 0.012 + 0.008,
-        color: Math.random() > 0.5 ? CYAN : PURPLE,
-        size: Math.random() * 2.5 + 1.5,
-      });
+      if (!cands.length) return;
+      const to = cands[Math.floor(Math.random() * cands.length)];
+      pulses.push({ from, to, progress: 0, speed: Math.random() * 0.01 + 0.007, color: [PURPLE, CYAN, GREEN][Math.floor(Math.random()*3)], size: Math.random() * 3 + 1.5 });
     }
 
-    function draw() {
-      ctx.clearRect(0, 0, W, H);
+    function drawNeural() {
+      nctx.clearRect(0, 0, W, H);
 
-      // Move nodes
+      // Move
       nodes.forEach(n => {
-        n.x += n.vx;
-        n.y += n.vy;
+        n.x += n.vx; n.y += n.vy; n.flicker += 0.04;
         if (n.x < 0 || n.x > W) n.vx *= -1;
         if (n.y < 0 || n.y > H) n.vy *= -1;
       });
 
-      // Draw connections
+      // Connections
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
-          const dx = nodes[j].x - nodes[i].x;
-          const dy = nodes[j].y - nodes[i].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < CONNECTION_DIST) {
-            const alpha = (1 - dist / CONNECTION_DIST) * 0.18;
-            ctx.beginPath();
-            ctx.moveTo(nodes[i].x, nodes[i].y);
-            ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.strokeStyle = `rgba(155, 89, 255, ${alpha})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
+          const dx = nodes[j].x - nodes[i].x, dy = nodes[j].y - nodes[i].y;
+          const d = Math.sqrt(dx*dx+dy*dy);
+          if (d < 180) {
+            const a = (1 - d / 180) * 0.2;
+            nctx.beginPath();
+            nctx.moveTo(nodes[i].x, nodes[i].y);
+            nctx.lineTo(nodes[j].x, nodes[j].y);
+            nctx.strokeStyle = `rgba(168,85,247,${a})`;
+            nctx.lineWidth = 0.5;
+            nctx.stroke();
           }
         }
       }
 
-      // Draw nodes
+      // Nodes
       nodes.forEach(n => {
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        const isC = n.color === CYAN;
-        ctx.fillStyle = isC ? 'rgba(0,245,255,0.7)' : 'rgba(155,89,255,0.7)';
-        ctx.fill();
-        // glow
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r * 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = isC ? 'rgba(0,245,255,0.07)' : 'rgba(155,89,255,0.07)';
-        ctx.fill();
+        const flicker = 0.7 + 0.3 * Math.sin(n.flicker);
+        const isC = n.color === CYAN, isG = n.color === GREEN;
+        nctx.beginPath();
+        nctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        nctx.fillStyle = isC ? `rgba(6,182,212,${flicker})` : isG ? `rgba(16,185,129,${flicker})` : `rgba(168,85,247,${flicker})`;
+        nctx.fill();
+        nctx.beginPath();
+        nctx.arc(n.x, n.y, n.r * 4, 0, Math.PI * 2);
+        nctx.fillStyle = isC ? 'rgba(6,182,212,0.05)' : isG ? 'rgba(16,185,129,0.05)' : 'rgba(168,85,247,0.05)';
+        nctx.fill();
       });
 
-      // Draw pulses
+      // Pulses
       pulses.forEach((p, idx) => {
         p.progress += p.speed;
-        if (p.progress >= 1) {
-          pulses.splice(idx, 1);
-          return;
-        }
-        const from = nodes[p.from];
-        const to = nodes[p.to];
-        const x = from.x + (to.x - from.x) * p.progress;
-        const y = from.y + (to.y - from.y) * p.progress;
-
-        const isCyan = p.color === CYAN;
-
-        // Trail
-        ctx.beginPath();
-        ctx.moveTo(from.x + (to.x - from.x) * Math.max(0, p.progress - 0.18),
-                   from.y + (to.y - from.y) * Math.max(0, p.progress - 0.18));
-        ctx.lineTo(x, y);
-        ctx.strokeStyle = isCyan ? 'rgba(0,245,255,0.5)' : 'rgba(155,89,255,0.5)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        // Head
-        ctx.beginPath();
-        ctx.arc(x, y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.fill();
-
-        // Head glow
-        ctx.beginPath();
-        ctx.arc(x, y, p.size * 3, 0, Math.PI * 2);
-        ctx.fillStyle = isCyan ? 'rgba(0,245,255,0.15)' : 'rgba(155,89,255,0.15)';
-        ctx.fill();
+        if (p.progress >= 1) { pulses.splice(idx, 1); return; }
+        const f = nodes[p.from], t = nodes[p.to];
+        const x = f.x + (t.x - f.x) * p.progress;
+        const y = f.y + (t.y - f.y) * p.progress;
+        const isC = p.color === CYAN, isG = p.color === GREEN;
+        const trail = Math.max(0, p.progress - 0.2);
+        nctx.beginPath();
+        nctx.moveTo(f.x + (t.x - f.x) * trail, f.y + (t.y - f.y) * trail);
+        nctx.lineTo(x, y);
+        nctx.strokeStyle = isC ? 'rgba(6,182,212,0.7)' : isG ? 'rgba(16,185,129,0.7)' : 'rgba(168,85,247,0.7)';
+        nctx.lineWidth = 1.5;
+        nctx.stroke();
+        nctx.beginPath();
+        nctx.arc(x, y, p.size, 0, Math.PI * 2);
+        nctx.fillStyle = p.color;
+        nctx.fill();
+        nctx.beginPath();
+        nctx.arc(x, y, p.size * 4, 0, Math.PI * 2);
+        nctx.fillStyle = isC ? 'rgba(6,182,212,0.15)' : isG ? 'rgba(16,185,129,0.15)' : 'rgba(168,85,247,0.15)';
+        nctx.fill();
       });
+    }
 
-      requestAnimationFrame(draw);
+    function drawBinary() {
+      bctx.clearRect(0, 0, W, H);
+      bctx.font = '11px Share Tech Mono, monospace';
+      drops.forEach(d => {
+        d.y += d.speed;
+        if (d.y > H + 200) d.y = -d.len * 14;
+        for (let i = 0; i < d.len; i++) {
+          const cy = d.y + i * 14;
+          if (cy < 0 || cy > H) continue;
+          const alpha = (1 - i / d.len) * (i === 0 ? 1 : 0.4);
+          bctx.fillStyle = i === 0 ? `rgba(6,182,212,${alpha})` : `rgba(168,85,247,${alpha * 0.5})`;
+          bctx.fillText(Math.random() > 0.5 ? '1' : '0', d.x, cy);
+        }
+      });
+    }
+
+    function drawTrail() {
+      tc.clearRect(0, 0, W, H);
+      trails.forEach((t, i) => {
+        t.life -= 0.04;
+        if (t.life <= 0) { trails.splice(i, 1); return; }
+        tc.beginPath();
+        tc.arc(t.x, t.y, t.size * t.life, 0, Math.PI * 2);
+        tc.fillStyle = `rgba(6,182,212,${t.life * 0.3})`;
+        tc.fill();
+      });
+    }
+
+    // ── HUD UPDATES ──
+    function updateHUD(ts) {
+      frameCount++;
+      if (ts - lastTime >= 1000) {
+        lastFPS = frameCount;
+        frameCount = 0;
+        lastTime = ts;
+      }
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      document.getElementById('h-time').textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      document.getElementById('h-fps').textContent = lastFPS;
+      document.getElementById('h-nodes').textContent = NODE_COUNT;
+      document.getElementById('h-conn').textContent = pulses.length;
+      const mem = 40 + Math.round(Math.random() * 30);
+      document.getElementById('h-mem').textContent = mem;
+      document.getElementById('h-mem-bar').style.width = mem + '%';
+      document.getElementById('h-net').textContent = 8 + Math.floor(Math.random() * 12);
+    }
+
+    // ── GLITCH TEXT ──
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%';
+    function glitchEl(el, original) {
+      let iters = 0;
+      const t = setInterval(() => {
+        el.textContent = original.split('').map((c, i) => {
+          if (i < iters) return original[i];
+          return c === ' ' ? ' ' : chars[Math.floor(Math.random() * chars.length)];
+        }).join('');
+        if (iters >= original.length) clearInterval(t);
+        iters += 1.5;
+      }, 40);
+    }
+
+    setTimeout(() => {
+      const g1 = document.getElementById('glitch-1');
+      const g2 = document.getElementById('glitch-2');
+      if (g1) glitchEl(g1, 'LAW MEETS MACHINE.');
+      if (g2) setTimeout(() => glitchEl(g2, 'HARSH TAKES ONLY.'), 400);
+      setInterval(() => {
+        if (Math.random() > 0.7) glitchEl(g1, 'LAW MEETS MACHINE.');
+        if (Math.random() > 0.8) setTimeout(() => glitchEl(g2, 'HARSH TAKES ONLY.'), 300);
+      }, 8000);
+    }, 2200);
+
+    // ── MAIN LOOP ──
+    function loop(ts) {
+      drawNeural();
+      drawBinary();
+      drawTrail();
+      updateHUD(ts);
+      requestAnimationFrame(loop);
     }
 
     window.addEventListener('resize', () => { resize(); initNodes(); });
     resize();
     initNodes();
-    draw();
-    setInterval(spawnPulse, 280);
+    setInterval(spawnPulse, 220);
+    requestAnimationFrame(loop);
   </script>
-
 </body>
 </html>
