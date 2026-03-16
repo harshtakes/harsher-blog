@@ -29,16 +29,16 @@ layout: ../../layouts/BlogPost.astro
 
 ${content}`;
 
-    // GitHub API credentials (you'll need to set these as environment variables)
+    // GitHub API credentials
     const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-    const GITHUB_REPO = "harshtakes/harsher-blog";
     const GITHUB_OWNER = "harshtakes";
+    const GITHUB_REPO = "harsher-blog";
 
     if (!GITHUB_TOKEN) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Server not configured for publishing. Please contact admin.' 
+          error: 'Server not configured for publishing' 
         }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
@@ -51,7 +51,7 @@ ${content}`;
     let sha = null;
     try {
       const checkResponse = await fetch(
-        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO.split('/')[1]}/contents/${filePath}`,
+        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`,
         {
           headers: {
             'Authorization': `token ${GITHUB_TOKEN}`,
@@ -70,7 +70,7 @@ ${content}`;
 
     // Create/update file in GitHub
     const response = await fetch(
-      `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO.split('/')[1]}/contents/${filePath}`,
+      `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`,
       {
         method: 'PUT',
         headers: {
@@ -81,7 +81,7 @@ ${content}`;
         body: JSON.stringify({
           message: `publish: ${title}`,
           content: Buffer.from(markdown).toString('base64'),
-          ...(sha && { sha }) // Include sha if file exists (for update)
+          ...(sha && { sha })
         })
       }
     );
