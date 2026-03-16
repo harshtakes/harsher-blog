@@ -28,7 +28,7 @@ const pageTitle = "harshtakes — admin";
 
         .admin-container {
             width: 100%;
-            max-width: 600px;
+            max-width: 700px;
         }
 
         .admin-panel {
@@ -98,10 +98,12 @@ const pageTitle = "harshtakes — admin";
             display: flex;
             gap: 1rem;
             margin-top: 2rem;
+            flex-wrap: wrap;
         }
 
         button {
             flex: 1;
+            min-width: 150px;
             padding: 0.75rem 1.5rem;
             background: #64c8ff;
             color: #0a0a19;
@@ -131,10 +133,21 @@ const pageTitle = "harshtakes — admin";
             background: rgba(100, 200, 255, 0.1);
         }
 
+        .copy-btn {
+            background: #44aa44;
+            color: white;
+        }
+
+        .copy-btn:hover {
+            box-shadow: 0 0 20px rgba(68, 170, 68, 0.5);
+        }
+
         .error-text,
         .status-text {
             margin-top: 1rem;
             font-size: 0.85rem;
+            padding: 0.75rem;
+            border-radius: 4px;
         }
 
         .error-text {
@@ -143,10 +156,38 @@ const pageTitle = "harshtakes — admin";
 
         .status-text {
             color: #64c8ff;
+            background: rgba(100, 200, 255, 0.1);
+        }
+
+        .markdown-output {
+            background: rgba(20, 20, 40, 0.9);
+            border: 1px solid #64c8ff;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            word-break: break-all;
+            white-space: pre-wrap;
         }
 
         .hidden {
             display: none;
+        }
+
+        .instructions {
+            background: rgba(100, 200, 255, 0.1);
+            border-left: 3px solid #64c8ff;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .instructions strong {
+            color: #64c8ff;
         }
     </style>
 </head>
@@ -154,7 +195,7 @@ const pageTitle = "harshtakes — admin";
     <main class="admin-container">
         <div class="admin-panel">
             <h1>⚡ ADMIN PANEL</h1>
-            <p class="subtitle">publish your thoughts to harshtakes.lol</p>
+            <p class="subtitle">generate & publish posts to harshtakes.lol</p>
 
             <div id="loginForm" class="login-section">
                 <div class="input-group">
@@ -170,6 +211,15 @@ const pageTitle = "harshtakes — admin";
             </div>
 
             <div id="publishForm" class="publish-section hidden">
+                <div class="instructions">
+                    <strong>📝 how it works:</strong><br>
+                    1. fill in the post details below<br>
+                    2. click "generate markdown"<br>
+                    3. copy the markdown code<br>
+                    4. create a new file in src/pages/blog/ folder<br>
+                    5. paste the code & commit
+                </div>
+
                 <div class="input-group">
                     <label for="title">title:</label>
                     <input
@@ -207,11 +257,17 @@ const pageTitle = "harshtakes — admin";
                 </div>
 
                 <div class="button-group">
-                    <button id="publishBtn">publish post</button>
+                    <button id="generateBtn">generate markdown</button>
                     <button id="logoutBtn" class="logout-btn">logout</button>
                 </div>
 
-                <p id="publishStatus" class="status-text"></p>
+                <p id="publishStatus" class="status-text hidden"></p>
+
+                <div id="markdownContainer" class="hidden">
+                    <label>📋 copy this and paste it into src/pages/blog/your-post.md:</label>
+                    <div class="markdown-output" id="markdownOutput"></div>
+                    <button id="copyBtn" class="copy-btn">copy to clipboard</button>
+                </div>
             </div>
         </div>
     </main>
@@ -224,9 +280,12 @@ const pageTitle = "harshtakes — admin";
         const passwordInput = document.getElementById('password');
         const loginBtn = document.getElementById('loginBtn');
         const loginError = document.getElementById('loginError');
-        const publishBtn = document.getElementById('publishBtn');
+        const generateBtn = document.getElementById('generateBtn');
         const logoutBtn = document.getElementById('logoutBtn');
         const publishStatus = document.getElementById('publishStatus');
+        const markdownContainer = document.getElementById('markdownContainer');
+        const markdownOutput = document.getElementById('markdownOutput');
+        const copyBtn = document.getElementById('copyBtn');
 
         loginBtn.addEventListener('click', () => {
             if (passwordInput.value === PASSWORD) {
@@ -253,9 +312,10 @@ const pageTitle = "harshtakes — admin";
             document.getElementById('content').value = '';
             document.getElementById('tags').value = '';
             publishStatus.textContent = '';
+            markdownContainer.classList.add('hidden');
         });
 
-        publishBtn.addEventListener('click', async () => {
+        generateBtn.addEventListener('click', () => {
             const title = document.getElementById('title').value.trim();
             const description = document.getElementById('description').value.trim();
             const content = document.getElementById('content').value.trim();
@@ -263,49 +323,44 @@ const pageTitle = "harshtakes — admin";
 
             if (!title || !content) {
                 publishStatus.textContent = '❌ title and content required';
-                publishStatus.style.color = '#ff4444';
+                publishStatus.classList.remove('hidden');
                 return;
             }
 
-            publishStatus.textContent = '⏳ publishing...';
-            publishStatus.style.color = '#64c8ff';
-            publishBtn.disabled = true;
+            const slug = title
+                .toLowerCase()
+                .replace(/[^\w\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-')
+                .slice(0, 50);
 
-            try {
-                const response = await fetch('/api/publish', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title,
-                        description,
-                        content,
-                        tags,
-                        date: new Date().toISOString().split('T')[0]
-                    })
-                });
+            const date = new Date().toISOString().split('T')[0];
 
-                if (response.ok) {
-                    publishStatus.textContent = '✅ post published! redirecting...';
-                    publishStatus.style.color = '#44ff44';
-                    setTimeout(() => {
-                        window.location.href = '/blog';
-                    }, 2000);
-                } else {
-                    publishStatus.textContent = '❌ publishing failed';
-                    publishStatus.style.color = '#ff4444';
-                }
-            } catch (error) {
-                publishStatus.textContent = '❌ error: ' + error.message;
-                publishStatus.style.color = '#ff4444';
-            } finally {
-                publishBtn.disabled = false;
-            }
+            const markdown = `---
+title: "${title.replace(/"/g, '\\"')}"
+description: "${description.replace(/"/g, '\\"')}"
+pubDate: "${date}"
+author: "Harsh"
+tags: [${tags.map(t => `"${t}"`).join(', ')}]
+layout: ../../layouts/BlogPost.astro
+---
+
+${content}`;
+
+            markdownOutput.textContent = markdown;
+            markdownContainer.classList.remove('hidden');
+            publishStatus.textContent = '✅ markdown generated! copy it below.';
+            publishStatus.classList.remove('hidden');
+
+            copyBtn.dataset.markdown = markdown;
         });
 
-        document.getElementById('content').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && e.ctrlKey) {
-                publishBtn.click();
-            }
+        copyBtn.addEventListener('click', () => {
+            const markdown = copyBtn.dataset.markdown;
+            navigator.clipboard.writeText(markdown).then(() => {
+                publishStatus.textContent = '✅ copied to clipboard! now create src/pages/blog/' + document.getElementById('title').value.toLowerCase().replace(/\s+/g, '-') + '.md and paste it.';
+                publishStatus.classList.remove('hidden');
+            });
         });
     </script>
 </body>
