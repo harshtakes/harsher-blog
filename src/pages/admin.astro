@@ -1,298 +1,312 @@
 ---
-import Layout from '../layouts/Layout.astro';
-
 const pageTitle = "harshtakes — admin";
 ---
 
-<Layout title={pageTitle}>
-  <main class="admin-container">
-    <div class="admin-panel">
-      <h1>⚡ ADMIN PANEL</h1>
-      <p class="subtitle">publish your thoughts to harshtakes.lol</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{pageTitle}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-      <div id="loginForm" class="login-section">
-        <div class="input-group">
-          <label for="password">password:</label>
-          <input
-            type="password"
-            id="password"
-            placeholder="enter admin password"
-            class="admin-input"
-          />
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a19 0%, #0f0f2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .admin-container {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .admin-panel {
+            border: 2px solid #64c8ff;
+            padding: 2rem;
+            background: rgba(10, 10, 25, 0.8);
+            box-shadow: 0 0 40px rgba(100, 200, 255, 0.2);
+            border-radius: 8px;
+        }
+
+        h1 {
+            color: #64c8ff;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 10px rgba(100, 200, 255, 0.5);
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            font-style: italic;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            color: #64c8ff;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input[type="password"],
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #64c8ff;
+            background: rgba(20, 20, 40, 0.9);
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="password"]:focus,
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #64c8ff;
+            box-shadow: 0 0 15px rgba(100, 200, 255, 0.3);
+            background: rgba(30, 30, 50, 0.95);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 250px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        button {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            background: #64c8ff;
+            color: #0a0a19;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(100, 200, 255, 0.5);
+        }
+
+        .logout-btn {
+            background: transparent;
+            color: #64c8ff;
+            border: 1px solid #64c8ff;
+        }
+
+        .logout-btn:hover {
+            background: rgba(100, 200, 255, 0.1);
+        }
+
+        .error-text,
+        .status-text {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .error-text {
+            color: #ff4444;
+        }
+
+        .status-text {
+            color: #64c8ff;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <main class="admin-container">
+        <div class="admin-panel">
+            <h1>⚡ ADMIN PANEL</h1>
+            <p class="subtitle">publish your thoughts to harshtakes.lol</p>
+
+            <div id="loginForm" class="login-section">
+                <div class="input-group">
+                    <label for="password">password:</label>
+                    <input
+                        type="password"
+                        id="password"
+                        placeholder="enter admin password"
+                    />
+                </div>
+                <button id="loginBtn">unlock</button>
+                <p id="loginError" class="error-text"></p>
+            </div>
+
+            <div id="publishForm" class="publish-section hidden">
+                <div class="input-group">
+                    <label for="title">title:</label>
+                    <input
+                        type="text"
+                        id="title"
+                        placeholder="post title"
+                    />
+                </div>
+
+                <div class="input-group">
+                    <label for="description">description:</label>
+                    <input
+                        type="text"
+                        id="description"
+                        placeholder="brief summary"
+                    />
+                </div>
+
+                <div class="input-group">
+                    <label for="content">content:</label>
+                    <textarea
+                        id="content"
+                        placeholder="write your post here..."
+                        rows="15"
+                    ></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label for="tags">tags (comma separated):</label>
+                    <input
+                        type="text"
+                        id="tags"
+                        placeholder="tech, law, ai"
+                    />
+                </div>
+
+                <div class="button-group">
+                    <button id="publishBtn">publish post</button>
+                    <button id="logoutBtn" class="logout-btn">logout</button>
+                </div>
+
+                <p id="publishStatus" class="status-text"></p>
+            </div>
         </div>
-        <button id="loginBtn" class="admin-btn">unlock</button>
-        <p id="loginError" class="error-text"></p>
-      </div>
+    </main>
 
-      <div id="publishForm" class="publish-section" style="display: none;">
-        <div class="input-group">
-          <label for="title">title:</label>
-          <input
-            type="text"
-            id="title"
-            placeholder="post title"
-            class="admin-input"
-          />
-        </div>
+    <script>
+        const PASSWORD = "Harsh#2404";
+        
+        const loginForm = document.getElementById('loginForm');
+        const publishForm = document.getElementById('publishForm');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginError = document.getElementById('loginError');
+        const publishBtn = document.getElementById('publishBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const publishStatus = document.getElementById('publishStatus');
 
-        <div class="input-group">
-          <label for="description">description:</label>
-          <input
-            type="text"
-            id="description"
-            placeholder="brief summary"
-            class="admin-input"
-          />
-        </div>
+        loginBtn.addEventListener('click', () => {
+            if (passwordInput.value === PASSWORD) {
+                loginForm.classList.add('hidden');
+                publishForm.classList.remove('hidden');
+                loginError.textContent = '';
+            } else {
+                loginError.textContent = '❌ incorrect password';
+                passwordInput.value = '';
+            }
+        });
 
-        <div class="input-group">
-          <label for="content">content:</label>
-          <textarea
-            id="content"
-            placeholder="write your post here..."
-            class="admin-textarea"
-            rows="15"
-          ></textarea>
-        </div>
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') loginBtn.click();
+        });
 
-        <div class="input-group">
-          <label for="tags">tags (comma separated):</label>
-          <input
-            type="text"
-            id="tags"
-            placeholder="tech, law, ai"
-            class="admin-input"
-          />
-        </div>
+        logoutBtn.addEventListener('click', () => {
+            publishForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            loginError.textContent = '';
+            passwordInput.value = '';
+            document.getElementById('title').value = '';
+            document.getElementById('description').value = '';
+            document.getElementById('content').value = '';
+            document.getElementById('tags').value = '';
+            publishStatus.textContent = '';
+        });
 
-        <div class="button-group">
-          <button id="publishBtn" class="admin-btn publish-btn">publish post</button>
-          <button id="logoutBtn" class="admin-btn logout-btn">logout</button>
-        </div>
+        publishBtn.addEventListener('click', async () => {
+            const title = document.getElementById('title').value.trim();
+            const description = document.getElementById('description').value.trim();
+            const content = document.getElementById('content').value.trim();
+            const tags = document.getElementById('tags').value.split(',').map(t => t.trim()).filter(t => t);
 
-        <p id="publishStatus" class="status-text"></p>
-      </div>
-    </div>
-  </main>
-</Layout>
+            if (!title || !content) {
+                publishStatus.textContent = '❌ title and content required';
+                publishStatus.style.color = '#ff4444';
+                return;
+            }
 
-<style>
-  .admin-container {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    background: linear-gradient(135deg, var(--color-dark) 0%, var(--color-darker) 100%);
-  }
+            publishStatus.textContent = '⏳ publishing...';
+            publishStatus.style.color = '#64c8ff';
+            publishBtn.disabled = true;
 
-  .admin-panel {
-    width: 100%;
-    max-width: 600px;
-    border: 2px solid var(--color-accent);
-    padding: 2rem;
-    background: rgba(10, 10, 25, 0.8);
-    box-shadow: 0 0 40px rgba(100, 200, 255, 0.2);
-    border-radius: 8px;
-  }
+            try {
+                const response = await fetch('/api/publish', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title,
+                        description,
+                        content,
+                        tags,
+                        date: new Date().toISOString().split('T')[0]
+                    })
+                });
 
-  h1 {
-    color: var(--color-accent);
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    text-shadow: 0 0 10px rgba(100, 200, 255, 0.5);
-    font-family: 'Courier New', monospace;
-  }
+                if (response.ok) {
+                    publishStatus.textContent = '✅ post published! redirecting...';
+                    publishStatus.style.color = '#44ff44';
+                    setTimeout(() => {
+                        window.location.href = '/blog';
+                    }, 2000);
+                } else {
+                    publishStatus.textContent = '❌ publishing failed';
+                    publishStatus.style.color = '#ff4444';
+                }
+            } catch (error) {
+                publishStatus.textContent = '❌ error: ' + error.message;
+                publishStatus.style.color = '#ff4444';
+            } finally {
+                publishBtn.disabled = false;
+            }
+        });
 
-  .subtitle {
-    color: var(--color-text-secondary);
-    font-size: 0.9rem;
-    margin-bottom: 2rem;
-    font-style: italic;
-  }
-
-  .input-group {
-    margin-bottom: 1.5rem;
-  }
-
-  label {
-    display: block;
-    color: var(--color-accent);
-    font-size: 0.85rem;
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-family: 'Courier New', monospace;
-  }
-
-  .admin-input,
-  .admin-textarea {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid var(--color-accent);
-    background: rgba(20, 20, 40, 0.9);
-    color: var(--color-text);
-    font-family: 'Courier New', monospace;
-    font-size: 0.9rem;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-  }
-
-  .admin-input:focus,
-  .admin-textarea:focus {
-    outline: none;
-    border-color: var(--color-accent);
-    box-shadow: 0 0 15px rgba(100, 200, 255, 0.3);
-    background: rgba(30, 30, 50, 0.95);
-  }
-
-  .admin-textarea {
-    resize: vertical;
-    min-height: 250px;
-  }
-
-  .button-group {
-    display: flex;
-    gap: 1rem;
-    margin-top: 2rem;
-  }
-
-  .admin-btn {
-    flex: 1;
-    padding: 0.75rem 1.5rem;
-    background: var(--color-accent);
-    color: var(--color-dark);
-    border: none;
-    border-radius: 4px;
-    font-weight: bold;
-    cursor: pointer;
-    font-family: 'Courier New', monospace;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
-  }
-
-  .admin-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 20px rgba(100, 200, 255, 0.5);
-  }
-
-  .logout-btn {
-    background: transparent;
-    color: var(--color-accent);
-    border: 1px solid var(--color-accent);
-  }
-
-  .logout-btn:hover {
-    background: rgba(100, 200, 255, 0.1);
-  }
-
-  .error-text,
-  .status-text {
-    margin-top: 1rem;
-    font-size: 0.85rem;
-    font-family: 'Courier New', monospace;
-  }
-
-  .error-text {
-    color: #ff4444;
-  }
-
-  .status-text {
-    color: var(--color-accent);
-  }
-</style>
-
-<script>
-  const PASSWORD = "Harsh#2404";
-  
-  const loginForm = document.getElementById('loginForm');
-  const publishForm = document.getElementById('publishForm');
-  const passwordInput = document.getElementById('password');
-  const loginBtn = document.getElementById('loginBtn');
-  const loginError = document.getElementById('loginError');
-  const publishBtn = document.getElementById('publishBtn');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const publishStatus = document.getElementById('publishStatus');
-
-  loginBtn.addEventListener('click', () => {
-    if (passwordInput.value === PASSWORD) {
-      loginForm.style.display = 'none';
-      publishForm.style.display = 'block';
-      loginError.textContent = '';
-    } else {
-      loginError.textContent = '❌ incorrect password';
-      passwordInput.value = '';
-    }
-  });
-
-  passwordInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') loginBtn.click();
-  });
-
-  logoutBtn.addEventListener('click', () => {
-    publishForm.style.display = 'none';
-    loginForm.style.display = 'block';
-    loginError.textContent = '';
-    passwordInput.value = '';
-    document.getElementById('title').value = '';
-    document.getElementById('description').value = '';
-    document.getElementById('content').value = '';
-    document.getElementById('tags').value = '';
-    publishStatus.textContent = '';
-  });
-
-  publishBtn.addEventListener('click', async () => {
-    const title = document.getElementById('title').value.trim();
-    const description = document.getElementById('description').value.trim();
-    const content = document.getElementById('content').value.trim();
-    const tags = document.getElementById('tags').value.split(',').map(t => t.trim()).filter(t => t);
-
-    if (!title || !content) {
-      publishStatus.textContent = '❌ title and content required';
-      publishStatus.style.color = '#ff4444';
-      return;
-    }
-
-    publishStatus.textContent = '⏳ publishing...';
-    publishStatus.style.color = 'var(--color-accent)';
-    publishBtn.disabled = true;
-
-    try {
-      const response = await fetch('/api/publish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title,
-          description,
-          content,
-          tags,
-          date: new Date().toISOString().split('T')[0]
-        })
-      });
-
-      if (response.ok) {
-        publishStatus.textContent = '✅ post published! redirecting...';
-        publishStatus.style.color = '#44ff44';
-        setTimeout(() => {
-          window.location.href = '/blog';
-        }, 2000);
-      } else {
-        publishStatus.textContent = '❌ publishing failed';
-        publishStatus.style.color = '#ff4444';
-      }
-    } catch (error) {
-      publishStatus.textContent = '❌ error: ' + error.message;
-      publishStatus.style.color = '#ff4444';
-    } finally {
-      publishBtn.disabled = false;
-    }
-  });
-
-  document.getElementById('content').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && e.ctrlKey) {
-      publishBtn.click();
-    }
-  });
-</script>
+        document.getElementById('content').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                publishBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>
