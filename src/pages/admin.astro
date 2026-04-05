@@ -1,0 +1,529 @@
+---
+// src/pages/admin.astro
+const isAdmin = false; // Auth handled client-side
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel // HARSH TAKES</title>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --border: #2a2a3a;
+      --accent: #00ff88;
+      --accent2: #7c3aed;
+      --text: #e0e0f0;
+      --muted: #666680;
+      --danger: #ff4466;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+    }
+
+    /* LOGIN SCREEN */
+    #login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: var(--bg);
+    }
+
+    .login-box {
+      border: 1px solid var(--accent);
+      padding: 2.5rem;
+      width: 360px;
+      background: var(--surface);
+      box-shadow: 0 0 40px rgba(0, 255, 136, 0.1);
+    }
+
+    .login-box h1 {
+      color: var(--accent);
+      font-size: 1.1rem;
+      letter-spacing: 0.2em;
+      margin-bottom: 0.4rem;
+    }
+
+    .login-box p {
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .login-box input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.75rem 1rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      outline: none;
+      margin-bottom: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    .login-box input:focus {
+      border-color: var(--accent);
+    }
+
+    .login-box button {
+      width: 100%;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 0.75rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      font-weight: bold;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .login-box button:hover { opacity: 0.85; }
+
+    .login-error {
+      color: var(--danger);
+      font-size: 0.75rem;
+      margin-top: 0.75rem;
+      display: none;
+    }
+
+    /* ADMIN PANEL */
+    #admin-panel {
+      display: none;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .admin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .admin-header h1 {
+      color: var(--accent);
+      font-size: 1rem;
+      letter-spacing: 0.2em;
+    }
+
+    .admin-header span {
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    .logout-btn {
+      background: none;
+      border: 1px solid var(--danger);
+      color: var(--danger);
+      padding: 0.35rem 0.85rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      transition: all 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: var(--danger);
+      color: #000;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-group.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    input, textarea, select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.65rem 0.85rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s;
+      resize: vertical;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+    }
+
+    select option {
+      background: var(--surface);
+    }
+
+    textarea#content {
+      min-height: 280px;
+      line-height: 1.6;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .btn-generate {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 0.8rem 2rem;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: opacity 0.2s;
+    }
+
+    .btn-generate:hover { opacity: 0.85; }
+
+    .btn-clear {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 0.8rem 1.5rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-clear:hover {
+      border-color: var(--text);
+      color: var(--text);
+    }
+
+    /* OUTPUT */
+    #output-section {
+      display: none;
+      margin-top: 2.5rem;
+      border: 1px solid var(--accent);
+      background: var(--surface);
+    }
+
+    .output-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,255,136,0.05);
+    }
+
+    .output-header span {
+      color: var(--accent);
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+    }
+
+    .btn-copy {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 0.35rem 1rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      transition: opacity 0.2s;
+    }
+
+    .btn-copy:hover { opacity: 0.85; }
+    .btn-copy.copied { background: var(--accent2); color: #fff; }
+
+    #markdown-output {
+      padding: 1.25rem;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #a0ffc0;
+      max-height: 450px;
+      overflow-y: auto;
+      word-break: break-word;
+    }
+
+    /* INSTRUCTIONS */
+    .instructions {
+      margin-top: 2rem;
+      border: 1px solid var(--border);
+      padding: 1.25rem;
+      background: var(--surface);
+    }
+
+    .instructions h3 {
+      color: var(--accent2);
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      margin-bottom: 1rem;
+    }
+
+    .step {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 0.6rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .step-num {
+      color: var(--accent);
+      font-weight: bold;
+      min-width: 20px;
+    }
+
+    .step code {
+      background: rgba(0,255,136,0.08);
+      color: var(--accent);
+      padding: 0.1rem 0.4rem;
+      font-size: 0.78rem;
+    }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <div id="login-screen">
+    <div class="login-box">
+      <h1>// ADMIN ACCESS</h1>
+      <p>HARSH TAKES — Secure Terminal</p>
+      <input type="password" id="password-input" placeholder="Enter password..." />
+      <button onclick="checkLogin()">AUTHENTICATE →</button>
+      <div class="login-error" id="login-error">⚠ ACCESS DENIED. Wrong password.</div>
+    </div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div id="admin-panel">
+    <div class="admin-header">
+      <div>
+        <h1>// MARKDOWN GENERATOR</h1>
+        <span>harshtakes.lol — Content Terminal</span>
+      </div>
+      <button class="logout-btn" onclick="logout()">LOGOUT</button>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Post Title *</label>
+        <input type="text" id="title" placeholder="e.g. AI and Copyright Law" />
+      </div>
+      <div class="form-group">
+        <label>Slug (URL) *</label>
+        <input type="text" id="slug" placeholder="e.g. ai-copyright-law" />
+      </div>
+      <div class="form-group full">
+        <label>Description (for SEO & preview)</label>
+        <input type="text" id="description" placeholder="One-line summary of the post..." />
+      </div>
+      <div class="form-group">
+        <label>Author</label>
+        <input type="text" id="author" value="Harsh Mudgal" />
+      </div>
+      <div class="form-group">
+        <label>Publish Date</label>
+        <input type="date" id="pubDate" />
+      </div>
+      <div class="form-group">
+        <label>Tags (comma separated)</label>
+        <input type="text" id="tags" placeholder="e.g. AI, IP Law, Tech" />
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="category">
+          <option value="tech-law">Tech Law</option>
+          <option value="ai">AI</option>
+          <option value="privacy">Privacy</option>
+          <option value="ip">Intellectual Property</option>
+          <option value="opinion">Opinion</option>
+          <option value="analysis">Analysis</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Content (Markdown) *</label>
+        <textarea id="content" placeholder="Write your post content here in markdown...&#10;&#10;## Section Heading&#10;&#10;Your paragraph text here.&#10;&#10;**Bold text**, *italic text*, [links](https://example.com)"></textarea>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-generate" onclick="generateMarkdown()">⚡ GENERATE MARKDOWN</button>
+      <button class="btn-clear" onclick="clearForm()">CLEAR FORM</button>
+    </div>
+
+    <!-- OUTPUT -->
+    <div id="output-section">
+      <div class="output-header">
+        <span>// GENERATED MARKDOWN — READY TO COPY</span>
+        <button class="btn-copy" id="copy-btn" onclick="copyMarkdown()">COPY</button>
+      </div>
+      <pre id="markdown-output"></pre>
+    </div>
+
+    <!-- INSTRUCTIONS -->
+    <div class="instructions">
+      <h3>// HOW TO PUBLISH</h3>
+      <div class="step"><span class="step-num">1.</span><span>Fill in the form above and click <strong>GENERATE MARKDOWN</strong></span></div>
+      <div class="step"><span class="step-num">2.</span><span>Click <strong>COPY</strong> to copy the generated markdown</span></div>
+      <div class="step"><span class="step-num">3.</span><span>In your project, create: <code>src/pages/blog/[your-slug].md</code></span></div>
+      <div class="step"><span class="step-num">4.</span><span>Paste the markdown into that file and save</span></div>
+      <div class="step"><span class="step-num">5.</span><span>Run <code>git add . && git commit -m "new post" && git push</code></span></div>
+      <div class="step"><span class="step-num">6.</span><span>Vercel auto-deploys — post goes live in ~60 seconds 🚀</span></div>
+    </div>
+  </div>
+
+  <script>
+    const PASSWORD = "Harsh#2404";
+
+    // Set today's date as default
+    document.getElementById('pubDate').value = new Date().toISOString().split('T')[0];
+
+    // Auto-generate slug from title
+    document.getElementById('title').addEventListener('input', function() {
+      const slug = this.value
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim();
+      document.getElementById('slug').value = slug;
+    });
+
+    function checkLogin() {
+      const val = document.getElementById('password-input').value;
+      if (val === PASSWORD) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('admin-panel').style.display = 'block';
+        sessionStorage.setItem('ht_admin', '1');
+      } else {
+        document.getElementById('login-error').style.display = 'block';
+      }
+    }
+
+    document.getElementById('password-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') checkLogin();
+    });
+
+    function logout() {
+      sessionStorage.removeItem('ht_admin');
+      document.getElementById('admin-panel').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('password-input').value = '';
+    }
+
+    // Persist login across page refresh
+    if (sessionStorage.getItem('ht_admin') === '1') {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('admin-panel').style.display = 'block';
+    }
+
+    function generateMarkdown() {
+      const title = document.getElementById('title').value.trim();
+      const slug = document.getElementById('slug').value.trim();
+      const description = document.getElementById('description').value.trim();
+      const author = document.getElementById('author').value.trim() || 'Harsh Mudgal';
+      const pubDate = document.getElementById('pubDate').value;
+      const tagsRaw = document.getElementById('tags').value;
+      const category = document.getElementById('category').value;
+      const content = document.getElementById('content').value.trim();
+
+      if (!title || !content) {
+        alert('Title and Content are required!');
+        return;
+      }
+
+      const tags = tagsRaw
+        ? tagsRaw.split(',').map(t => `"${t.trim()}"`).join(', ')
+        : '';
+
+      const frontmatter = `---
+title: "${title}"
+description: "${description}"
+pubDate: ${pubDate || new Date().toISOString().split('T')[0]}
+author: "${author}"
+category: "${category}"${tags ? `\ntags: [${tags}]` : ''}
+---
+
+${content}`;
+
+      document.getElementById('markdown-output').textContent = frontmatter;
+      document.getElementById('output-section').style.display = 'block';
+
+      // Scroll to output
+      document.getElementById('output-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // Reset copy button
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = 'COPY';
+      btn.classList.remove('copied');
+    }
+
+    function copyMarkdown() {
+      const text = document.getElementById('markdown-output').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copy-btn');
+        btn.textContent = '✓ COPIED!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'COPY';
+          btn.classList.remove('copied');
+        }, 2500);
+      });
+    }
+
+    function clearForm() {
+      document.getElementById('title').value = '';
+      document.getElementById('slug').value = '';
+      document.getElementById('description').value = '';
+      document.getElementById('author').value = 'Harsh Mudgal';
+      document.getElementById('pubDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('tags').value = '';
+      document.getElementById('content').value = '';
+      document.getElementById('output-section').style.display = 'none';
+    }
+  </script>
+
+</body>
+</html>
