@@ -331,7 +331,7 @@ const isAdmin = false; // Auth handled client-side
       <h1>// ADMIN ACCESS</h1>
       <p>HARSH TAKES — Secure Terminal</p>
       <input type="password" id="password-input" placeholder="Enter password..." />
-      <button onclick="checkLogin()">AUTHENTICATE →</button>
+      <button id="login-btn">AUTHENTICATE →</button>
       <div class="login-error" id="login-error">⚠ ACCESS DENIED. Wrong password.</div>
     </div>
   </div>
@@ -343,7 +343,7 @@ const isAdmin = false; // Auth handled client-side
         <h1>// MARKDOWN GENERATOR</h1>
         <span>harshtakes.lol — Content Terminal</span>
       </div>
-      <button class="logout-btn" onclick="logout()">LOGOUT</button>
+      <button class="logout-btn" id="logout-btn">LOGOUT</button>
     </div>
 
     <div class="form-grid">
@@ -389,15 +389,15 @@ const isAdmin = false; // Auth handled client-side
     </div>
 
     <div class="btn-row">
-      <button class="btn-generate" onclick="generateMarkdown()">⚡ GENERATE MARKDOWN</button>
-      <button class="btn-clear" onclick="clearForm()">CLEAR FORM</button>
+      <button class="btn-generate" id="generate-btn">⚡ GENERATE MARKDOWN</button>
+      <button class="btn-clear" id="clear-btn">CLEAR FORM</button>
     </div>
 
     <!-- OUTPUT -->
     <div id="output-section">
       <div class="output-header">
         <span>// GENERATED MARKDOWN — READY TO COPY</span>
-        <button class="btn-copy" id="copy-btn" onclick="copyMarkdown()">COPY</button>
+        <button class="btn-copy" id="copy-btn">COPY</button>
       </div>
       <pre id="markdown-output"></pre>
     </div>
@@ -414,115 +414,112 @@ const isAdmin = false; // Auth handled client-side
     </div>
   </div>
 
-  <script>
+  <script is:inline>
     const PASSWORD = "Harsh#2404";
 
-    // Set today's date as default
-    document.getElementById('pubDate').value = new Date().toISOString().split('T')[0];
+    document.addEventListener('DOMContentLoaded', function () {
 
-    // Auto-generate slug from title
-    document.getElementById('title').addEventListener('input', function() {
-      const slug = this.value
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .trim();
-      document.getElementById('slug').value = slug;
-    });
+      // Set today's date
+      document.getElementById('pubDate').value = new Date().toISOString().split('T')[0];
 
-    function checkLogin() {
-      const val = document.getElementById('password-input').value;
-      if (val === PASSWORD) {
+      // Persist login
+      if (sessionStorage.getItem('ht_admin') === '1') {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('admin-panel').style.display = 'block';
-        sessionStorage.setItem('ht_admin', '1');
-      } else {
-        document.getElementById('login-error').style.display = 'block';
-      }
-    }
-
-    document.getElementById('password-input').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') checkLogin();
-    });
-
-    function logout() {
-      sessionStorage.removeItem('ht_admin');
-      document.getElementById('admin-panel').style.display = 'none';
-      document.getElementById('login-screen').style.display = 'flex';
-      document.getElementById('password-input').value = '';
-    }
-
-    // Persist login across page refresh
-    if (sessionStorage.getItem('ht_admin') === '1') {
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('admin-panel').style.display = 'block';
-    }
-
-    function generateMarkdown() {
-      const title = document.getElementById('title').value.trim();
-      const slug = document.getElementById('slug').value.trim();
-      const description = document.getElementById('description').value.trim();
-      const author = document.getElementById('author').value.trim() || 'Harsh Mudgal';
-      const pubDate = document.getElementById('pubDate').value;
-      const tagsRaw = document.getElementById('tags').value;
-      const category = document.getElementById('category').value;
-      const content = document.getElementById('content').value.trim();
-
-      if (!title || !content) {
-        alert('Title and Content are required!');
-        return;
       }
 
-      const tags = tagsRaw
-        ? tagsRaw.split(',').map(t => `"${t.trim()}"`).join(', ')
-        : '';
-
-      const frontmatter = `---
-title: "${title}"
-description: "${description}"
-pubDate: ${pubDate || new Date().toISOString().split('T')[0]}
-author: "${author}"
-category: "${category}"${tags ? `\ntags: [${tags}]` : ''}
----
-
-${content}`;
-
-      document.getElementById('markdown-output').textContent = frontmatter;
-      document.getElementById('output-section').style.display = 'block';
-
-      // Scroll to output
-      document.getElementById('output-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-      // Reset copy button
-      const btn = document.getElementById('copy-btn');
-      btn.textContent = 'COPY';
-      btn.classList.remove('copied');
-    }
-
-    function copyMarkdown() {
-      const text = document.getElementById('markdown-output').textContent;
-      navigator.clipboard.writeText(text).then(() => {
-        const btn = document.getElementById('copy-btn');
-        btn.textContent = '✓ COPIED!';
-        btn.classList.add('copied');
-        setTimeout(() => {
-          btn.textContent = 'COPY';
-          btn.classList.remove('copied');
-        }, 2500);
+      // Auto-slug from title
+      document.getElementById('title').addEventListener('input', function () {
+        document.getElementById('slug').value = this.value
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .trim();
       });
-    }
 
-    function clearForm() {
-      document.getElementById('title').value = '';
-      document.getElementById('slug').value = '';
-      document.getElementById('description').value = '';
-      document.getElementById('author').value = 'Harsh Mudgal';
-      document.getElementById('pubDate').value = new Date().toISOString().split('T')[0];
-      document.getElementById('tags').value = '';
-      document.getElementById('content').value = '';
-      document.getElementById('output-section').style.display = 'none';
-    }
+      // Login
+      function checkLogin() {
+        const val = document.getElementById('password-input').value;
+        if (val === PASSWORD) {
+          document.getElementById('login-screen').style.display = 'none';
+          document.getElementById('admin-panel').style.display = 'block';
+          sessionStorage.setItem('ht_admin', '1');
+        } else {
+          document.getElementById('login-error').style.display = 'block';
+        }
+      }
+
+      document.getElementById('login-btn').addEventListener('click', checkLogin);
+      document.getElementById('password-input').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') checkLogin();
+      });
+
+      // Logout
+      document.getElementById('logout-btn').addEventListener('click', function () {
+        sessionStorage.removeItem('ht_admin');
+        document.getElementById('admin-panel').style.display = 'none';
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('password-input').value = '';
+      });
+
+      // Generate
+      document.getElementById('generate-btn').addEventListener('click', function () {
+        const title = document.getElementById('title').value.trim();
+        const description = document.getElementById('description').value.trim();
+        const author = document.getElementById('author').value.trim() || 'Harsh Mudgal';
+        const pubDate = document.getElementById('pubDate').value;
+        const tagsRaw = document.getElementById('tags').value;
+        const category = document.getElementById('category').value;
+        const content = document.getElementById('content').value.trim();
+
+        if (!title || !content) {
+          alert('Title and Content are required!');
+          return;
+        }
+
+        const tags = tagsRaw
+          ? tagsRaw.split(',').map(function(t) { return '"' + t.trim() + '"'; }).join(', ')
+          : '';
+
+        const frontmatter = '---\ntitle: "' + title + '"\ndescription: "' + description + '"\npubDate: ' + (pubDate || new Date().toISOString().split('T')[0]) + '\nauthor: "' + author + '"\ncategory: "' + category + '"' + (tags ? '\ntags: [' + tags + ']' : '') + '\n---\n\n' + content;
+
+        document.getElementById('markdown-output').textContent = frontmatter;
+        document.getElementById('output-section').style.display = 'block';
+        document.getElementById('output-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        const btn = document.getElementById('copy-btn');
+        btn.textContent = 'COPY';
+        btn.classList.remove('copied');
+      });
+
+      // Copy
+      document.getElementById('copy-btn').addEventListener('click', function () {
+        const text = document.getElementById('markdown-output').textContent;
+        navigator.clipboard.writeText(text).then(function () {
+          const btn = document.getElementById('copy-btn');
+          btn.textContent = '✓ COPIED!';
+          btn.classList.add('copied');
+          setTimeout(function () {
+            btn.textContent = 'COPY';
+            btn.classList.remove('copied');
+          }, 2500);
+        });
+      });
+
+      // Clear
+      document.getElementById('clear-btn').addEventListener('click', function () {
+        document.getElementById('title').value = '';
+        document.getElementById('slug').value = '';
+        document.getElementById('description').value = '';
+        document.getElementById('author').value = 'Harsh Mudgal';
+        document.getElementById('pubDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('tags').value = '';
+        document.getElementById('content').value = '';
+        document.getElementById('output-section').style.display = 'none';
+      });
+
+    });
   </script>
 
 </body>
